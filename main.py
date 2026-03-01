@@ -7,45 +7,80 @@ p = Presence(c.CLIENT_ID)
 p.connect()
 
 # 记录程序启动时间（或者本轮开始时间）
-start_time = time()           # 用 time() 更轻量
-# start_time = datetime.now().timestamp()  # 也可以
-
-
-def update(name, l1, l2=None):
-    now = datetime.now()
-    elapsed = int(time() - start_time)  # 已过去多少秒
-
-    p.update(
-        name=name,
-        state=l2,
-        details=l1,
-        start=int(start_time),               # 从程序/本轮开始计时
-        large_image="head_subqq",
-        # large_text=f"已肝了 {elapsed//60}分 {elapsed % 60}秒 ｜ 开始: {now.strftime('%m-%d %H:%M')}",
-        buttons=[
-        #    {'label': '加入思维服务器 (没准有直播)', 'url': 'https://discord.gg/Vvex8Z6zKs'},
-        #    {'label': '速速观战', 'url': 'https://discord.com/channels/1061629481267245086/1385943585597292706'}
-        {'label': '我也要状态显示!', 'url': 'https://github.com/wyf9/pypresence-ws'}
-]
-    )
+start_time = time()
 
 
 print("Rich Presence 已启动，按 Ctrl+C 退出")
+AVAILABLE = "Available: n (name), 1 (line 1), 2 (line 2), s (status l1|l2), l (label), u (url), b (label|url)"
+
+n = l1 = l2 = l = u = ''
 
 try:
-    name = input("Name: ")
-    if not name:
+    n = input("Name: ")
+    if not n:
         raise ValueError("必须提供一个名称！")
+    print(AVAILABLE)
     while True:
-        details = input("Line 1|2: ").strip().split('|', 1)
-        if not details:
+        inputed = input(">> ").strip()
+        if len(inputed) <= 2:
             continue
-        if len(details) > 1:
-            update(name, details[0], details[1])
-        else:
-            update(name, details[0])
-        sleep(12)   # 强烈建议至少 sleep 10–13 秒，避免触发频率限制
-
+        inp = inputed[2:]
+        if not inp:
+            inp = None
+        match inputed[:1]:
+            case 'n':
+                n = inp
+            case '1':
+                l1 = inp
+            case '2':
+                l2 = inp
+            case 's':
+                if inp:
+                    lines = inp.split('|', 1)
+                    if len(lines) > 1:
+                        l2 = lines[1]
+                    l1 = lines[0]
+                else:
+                    l1 = l2 = None
+            case 'l':
+                l = inp
+            case 'u':
+                u = inp
+            case 'b':
+                if inp:
+                    lines = inp.split('|', 1)
+                    if len(lines) > 1:
+                        u = lines[1]
+                    l = lines[0]
+                else:
+                    l1 = l2 = None
+            case _:
+                print(AVAILABLE)
+                continue
+        if n and (l1 or l2):
+            if l and u:
+                p.update(
+                    name=n,
+                    details=l1 or None,  # 1
+                    state=l2 or None,  # 2
+                    start=int(start_time),               # 从程序/本轮开始计时
+                    large_image="head_subqq",
+                    buttons=[
+                        {'label': l, 'url': u},
+                        {'label': '我也要状态显示!', 'url': 'https://github.com/wyf9/pypresence-ws'}
+                    ]
+                )
+            else:
+                p.update(
+                    name=n,
+                    details=l1 or None,  # 1
+                    state=l2 or None,  # 2
+                    start=int(start_time),               # 从程序/本轮开始计时
+                    large_image="head_subqq",
+                    buttons=[
+                        {'label': '我也要状态显示!', 'url': 'https://github.com/wyf9/pypresence-ws'}
+                    ]
+                )
 except KeyboardInterrupt:
     print("\n正在关闭...")
     try:
